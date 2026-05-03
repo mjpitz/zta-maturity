@@ -144,21 +144,21 @@ export function decodeAnswers(encoded: string): FormAnswers | null {
 }
 
 /**
- * Generate shareable URL for assessment results
+ * Generate shareable URL for assessment results using hash-based routing
  */
 export function generateShareUrl(answers: FormAnswers): string {
   const encoded = encodeAnswers(answers);
   const baseUrl = window.location.origin + window.location.pathname;
-  // Remove any existing /details/{encoded} path and trailing slash
-  const cleanBaseUrl = baseUrl.replace(/\/details\/[0-9a-fA-F]+$/, '').replace(/\/$/, '');
-  return `${cleanBaseUrl}/details/${encoded}`;
+  // Remove any existing hash
+  const cleanBaseUrl = baseUrl.replace(/#.*$/, '');
+  return `${cleanBaseUrl}#/details/${encoded}`;
 }
 
 /**
- * Extract encoded string from current URL path
+ * Extract encoded string from current URL hash (path-style)
  */
 export function getEncodedFromPath(): string | null {
-  const path = window.location.pathname;
-  const match = path.match(/\/details\/([0-9a-fA-F]+)$/);
+  const hash = window.location.hash;
+  const match = hash.match(/^#\/details\/([0-9a-fA-F]+)$/);
   return match ? match[1] : null;
 }
