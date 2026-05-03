@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { FormAnswers } from '../types';
 import { useLocalStorage } from './useLocalStorage';
 
@@ -51,6 +51,22 @@ export function useCarousel(totalQuestions: number) {
     }));
   }, [setState]);
 
+  const setAnswers = useCallback((newAnswers: FormAnswers) => {
+    setState(prev => ({
+      ...prev,
+      answers: newAnswers,
+    }));
+  }, [setState]);
+
+  const goToSlide = useCallback((slideIndex: number) => {
+    if (slideIndex >= 0 && slideIndex < totalQuestions) {
+      setState(prev => ({
+        ...prev,
+        currentSlide: slideIndex,
+      }));
+    }
+  }, [totalQuestions, setState]);
+
   const reset = useCallback(() => {
     setState(INITIAL_STATE);
   }, [setState]);
@@ -65,6 +81,8 @@ export function useCarousel(totalQuestions: number) {
     next,
     previous,
     setAnswer,
+    setAnswers,
+    goToSlide,
     reset,
     isFirst: currentSlide === 0,
     isLast: currentSlide === totalQuestions - 1,

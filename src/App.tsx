@@ -2,16 +2,18 @@ import { useState, useMemo, useEffect } from 'react';
 import { Question } from './components/Question';
 import { ProgressBar } from './components/ProgressBar';
 import { Navigation } from './components/Navigation';
-import { Results } from './components/Results';
+import { DetailedResults } from './components/DetailedResults';
 import { useCarousel } from './hooks/useCarousel';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { maturityModel, MATURITY_LABELS } from './data/maturityModel';
-import { QuestionData, PillarResult } from './types';
+import { QuestionData, PillarResult, FormAnswers } from './types';
+import { getEncodedFromPath, decodeAnswers } from './utils/wireFormat';
 import './App.css';
 
 interface AssessmentResults {
   showResults: boolean;
   results: PillarResult[];
+  answers: FormAnswers;
 }
 
 const RESULTS_STORAGE_KEY = 'zta-assessment-results';
@@ -23,7 +25,9 @@ function App() {
   );
   const [showResults, setShowResults] = useState(savedResults?.showResults || false);
   const [results, setResults] = useState<PillarResult[]>(savedResults?.results || []);
+  const [resultAnswers, setResultAnswers] = useState<FormAnswers>(savedResults?.answers || {});
   const [showRestoredNotice, setShowRestoredNotice] = useState(false);
+  const [isSharedView, setIsSharedView] = useState(false);
 
   // Generate questions array
   const questions = useMemo(() => {
@@ -44,6 +48,48 @@ function App() {
   const currentQuestion = questions[carousel.currentSlide];
   const questionName = `${currentQuestion.pillar}:${currentQuestion.fn}`;
 
+  // Check for encoded results in URL on mount
+  useEffect(() => {
+    const encoded = getEncodedFromPath();
+    if (encoded) {
+      const decodedAnswers = decodeAnswers(encoded);
+      if (decodedAnswers) {
+        // Calculate results from decoded answers
+        const sections: { [key: string]: number[] } = {};
+        
+        for (const name in decodedAnswers) {
+          const parts = name.split(':');
+          const pillar = parts[0];
+          const score = decodedAnswers[name];
+          
+          if (!sections[pillar]) {
+            sections[pillar] = [];
+          }
+          sections[pillar].push(score);
+        }
+        
+        const calculatedResults: PillarResult[] = [];
+        for (const pillar in sections) {
+          const scores = sections[pillar].sort((a, b) => a - b);
+          const medianIdx = Math.floor(scores.length / 2);
+          const median = scores[medianIdx];
+          const level = MATURITY_LABELS[median];
+          
+          calculatedResults.push({
+            pillar,
+            level,
+            levelIndex: median,
+          });
+        }
+        
+        setResults(calculatedResults);
+        setResultAnswers(decodedAnswers);
+        setIsSharedView(true);
+        setShowResults(true);
+      }
+    }
+  }, []); // Only run once on mount
+
   // Show notice if progress was restored from local storage
   useEffect(() => {
     const hasAnswers = Object.keys(carousel.answers).length > 0;
@@ -61,10 +107,10 @@ function App() {
 
   // Save results to localStorage whenever they change
   useEffect(() => {
-    if (showResults && results.length > 0) {
-      setSavedResults({ showResults, results });
+    if (showResults && results.length > 0 && Object.keys(resultAnswers).length > 0) {
+      setSavedResults({ showResults, results, answers: resultAnswers });
     }
-  }, [showResults, results, setSavedResults]);
+  }, [showResults, results, resultAnswers, setSavedResults]);
 
   const handleSubmit = () => {
     // Calculate results
@@ -96,6 +142,7 @@ function App() {
     }
 
     setResults(calculatedResults);
+    setResultAnswers(carousel.answers);
     setShowResults(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -105,13 +152,46 @@ function App() {
     setSavedResults(null); // Clear saved results from localStorage
     setShowResults(false);
     setResults([]);
+    setIsSharedView(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleTakeAssessment = () => {
+    setShowResults(false);
+    setIsSharedView(false);
+    setResults([]);
+    setResultAnswers({});
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleEditQuestion = (questionKey: string) => {
+    // Find the question index
+    const questionIndex = questions.findIndex(
+      (q) => `${q.pillar}:${q.fn}` === questionKey
+    );
+    
+    if (questionIndex !== -1) {
+      // Load the answers from results into carousel
+      carousel.setAnswers(resultAnswers);
+      // Navigate to that specific question
+      carousel.goToSlide(questionIndex);
+      // Exit results view
+      setShowResults(false);
+      setIsSharedView(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   if (showResults) {
     return (
       <div className="container">
-        <Results results={results} onRestart={handleRestart} />
+        <DetailedResults 
+          results={results} 
+          answers={resultAnswers} 
+          onTakeAssessment={isSharedView ? handleTakeAssessment : handleRestart}
+          onEditQuestion={handleEditQuestion}
+          isSharedView={isSharedView}
+        />
       </div>
     );
   }
