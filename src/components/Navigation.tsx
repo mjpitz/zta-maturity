@@ -18,6 +18,14 @@ export function Navigation({ isFirst, isLast, canProceed, onPrevious, onNext, on
     onNext();
   };
 
+  const handleSubmit = () => {
+    if (!canProceed) {
+      alert('Please answer the current question before submitting.');
+      return;
+    }
+    onSubmit();
+  };
+
   return (
     <div className="navigation-container">
       <button
@@ -49,7 +57,8 @@ export function Navigation({ isFirst, isLast, canProceed, onPrevious, onNext, on
         <button
           type="button"
           className="nav-btn submit-btn"
-          onClick={onSubmit}
+          onClick={handleSubmit}
+          disabled={!canProceed}
         >
           <span>Calculate Maturity Assessment</span>
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

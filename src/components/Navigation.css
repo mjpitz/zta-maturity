@@ -62,6 +62,21 @@
   transform: translateX(-4px);
 }
 
+.nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.nav-btn:disabled:hover {
+  transform: none;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.nav-btn:disabled:hover svg {
+  transform: none;
+}
+
 @media (max-width: 768px) {
   .submit-btn {
     width: 100%;

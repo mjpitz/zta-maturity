@@ -1,9 +1,22 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { FormAnswers } from '../types';
+import { useLocalStorage } from './useLocalStorage';
+
+interface CarouselState {
+  currentSlide: number;
+  answers: FormAnswers;
+}
+
+const STORAGE_KEY = 'zta-assessment-state';
+const INITIAL_STATE: CarouselState = {
+  currentSlide: 0,
+  answers: {},
+};
 
 export function useCarousel(totalQuestions: number) {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [answers, setAnswers] = useState<FormAnswers>({});
+  const [state, setState] = useLocalStorage<CarouselState>(STORAGE_KEY, INITIAL_STATE);
+  
+  const { currentSlide, answers } = state;
 
   const canProceed = useCallback((questionName: string): boolean => {
     return answers[questionName] !== undefined;
@@ -11,28 +24,36 @@ export function useCarousel(totalQuestions: number) {
 
   const next = useCallback((questionName: string) => {
     if (canProceed(questionName) && currentSlide < totalQuestions - 1) {
-      setCurrentSlide(prev => prev + 1);
+      setState(prev => ({
+        ...prev,
+        currentSlide: prev.currentSlide + 1,
+      }));
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [canProceed, currentSlide, totalQuestions]);
+  }, [canProceed, currentSlide, totalQuestions, setState]);
 
   const previous = useCallback(() => {
     if (currentSlide > 0) {
-      setCurrentSlide(prev => prev - 1);
+      setState(prev => ({
+        ...prev,
+        currentSlide: prev.currentSlide - 1,
+      }));
     }
-  }, [currentSlide]);
+  }, [currentSlide, setState]);
 
   const setAnswer = useCallback((questionName: string, value: number) => {
-    setAnswers(prev => ({
+    setState(prev => ({
       ...prev,
-      [questionName]: value
+      answers: {
+        ...prev.answers,
+        [questionName]: value,
+      },
     }));
-  }, []);
+  }, [setState]);
 
   const reset = useCallback(() => {
-    setCurrentSlide(0);
-    setAnswers({});
-  }, []);
+    setState(INITIAL_STATE);
+  }, [setState]);
 
   const progress = ((currentSlide + 1) / totalQuestions) * 100;
 

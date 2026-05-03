@@ -34,6 +34,63 @@
   position: relative;
 }
 
+.restored-notice {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.restored-notice svg {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.restored-notice span {
+  flex: 1;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.restored-notice .close-notice {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.75rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  flex-shrink: 0;
+}
+
+.restored-notice .close-notice:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 0;
